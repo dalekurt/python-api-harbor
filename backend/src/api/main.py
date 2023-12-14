@@ -1,29 +1,12 @@
 # backend/main.py
 import time
 
-import schedule
+from config.app_config import configure_app
 from config.elasticsearch_config import check_elasticsearch
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
-from handlers.exchangerates_handler import router as exchangerates_router
 from loguru import logger
 
-app = FastAPI()
-
-# Include routers
-app.include_router(exchangerates_router)
-
-# Configure CORS
-origins = ["http://localhost:8001"]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+app = configure_app()
 
 logger.add("logs/app.log", rotation="500 MB", level="INFO")
 
