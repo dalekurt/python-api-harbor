@@ -80,8 +80,12 @@ async def fetch_translate_store_exchangerates_data():
 @router.get("/exchangeratesdata")
 async def get_exchange_rates_data():
     try:
-        # Fetch data from Elasticsearch
-        data = fetch_data_from_elasticsearch()
+        # Fetch data from Elasticsearch with a dynamic index name
+        data = fetch_data_from_elasticsearch(
+            index_name=os.getenv(
+                "ELASTICSEARCH_EXCHANGERATES_INDEX_NAME", "exchangeratesapi"
+            )
+        )
 
         return {"message": "Data fetched successfully", "data": data}
     except Exception as e:
@@ -145,9 +149,9 @@ async def fetch_translate_store_weather_data():
 @router.get("/weatherapidata")
 async def get_weather_data():
     try:
-        # Fetch data from Elasticsearch
+        # Fetch data from Elasticsearch with a dynamic index name
         data = fetch_data_from_elasticsearch(
-            index_name=os.getenv("ELASTICSEARCH_WEATHER_API_INDEX_NAME")
+            index_name=os.getenv("ELASTICSEARCH_WEATHER_API_INDEX_NAME", "weatherapi")
         )
 
         return {"message": "Weather data fetched successfully", "data": data}

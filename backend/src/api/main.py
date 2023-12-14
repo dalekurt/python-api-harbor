@@ -17,10 +17,12 @@ scheduled_tasks = [
     {
         "handler": "handlers.api_handler",
         "function": "fetch_translate_store_exchangerates_data",
+        "interval_seconds": 60 * 60 * 24,  # Run every 24 hours
     },
     {
         "handler": "handlers.api_handler",
         "function": "fetch_translate_store_weather_data",
+        "interval_seconds": 60 * 30,  # Run every 30 minutes
     },
 ]
 
@@ -35,7 +37,7 @@ def startup_event():
         handler_module = __import__(task["handler"], fromlist=[task["function"]])
         scheduled_function = getattr(handler_module, task["function"])
 
-        @repeat_every(seconds=60 * 60 * 24, logger=None)  # Run every 24 hours
+        @repeat_every(seconds=task["interval_seconds"], logger=None)
         def scheduled_task():
             try:
                 scheduled_function()
