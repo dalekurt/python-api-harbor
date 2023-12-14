@@ -1,7 +1,7 @@
 # backend/config/app_config.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from handlers.exchangerates_handler import router as exchangerates_router
+from handlers.api_handler import router as exchangerates_router
 
 
 def configure_app() -> FastAPI:
