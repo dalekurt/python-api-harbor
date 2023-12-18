@@ -17,143 +17,109 @@ load_dotenv()
 router = APIRouter()
 
 
-@router.get("/exchangeratesapi")
-async def fetch_translate_store_exchangerates_data():
-    try:
-        # Load the API configuration from environment variables
-        api_url = os.getenv("EXCHANGERATES_API_URL")
-        api_key = os.getenv("EXCHANGERATES_API_KEY")
+def create_api_handler(api_name, api_config):
+    """
+    Create an API handler for the given API.
+    """
 
-        if not api_url or not api_key:
-            raise HTTPException(
-                status_code=500, detail="API configuration not provided"
-            )
-
-        # Fetch data from the Exchange Rates API
-        params = {"access_key": api_key}
-        data = await fetch_data_from_api(api_url, params)
-
-        # Parsing the received JSON data
-        success = data.get("success", False)
-        timestamp = data.get("timestamp")
-        base_currency = data.get("base")
-        date = data.get("date")
-        exchange_rates = data.get("rates", {})
-
-        data_to_store = {
-            "success": success,
-            "timestamp": timestamp,
-            "base_currency": base_currency,
-            "date": date,
-            "exchange_rates": exchange_rates,
-        }
-
-        # Create the index if it does not exist
+    @router.get(f"/{api_name}")
+    async def fetch_translate_store_exchangerate_data(api_name: str):
         try:
-            create_index_if_not_exists()
+            # Load the API configuration from environment variables
+            api_url = os.getenv(api_config["API_URL_ENV"])
+            api_key = os.getenv(api_config["API_KEY_ENV"])
+
+            if not api_url or not api_key:
+                raise HTTPException(
+                    status_code=500, detail=f"{api_name} API configuration not provided"
+                )
+
+            # Fetch data from the API
+            params = {"access_key": api_key}
+            data = await fetch_data_from_api(api_url, params)
+
+            # Parsing the received JSON data
+            # You can customize this part based on the actual response structure
+            data_to_store = api_config["parse_function"](data)
+
+            # Create the index if it does not exist
+            try:
+                create_index_if_not_exists()
+            except Exception as e:
+                logger.error(f"Error creating Elasticsearch index: {str(e)}")
+
+            # Storing the data in Elasticsearch
+            index_name = os.getenv(api_config["ELASTICSEARCH_INDEX_ENV"], api_name)
+
+            # Log the data to be stored
+            logger.info(f"Storing data in Elasticsearch: {data_to_store}")
+
+            # Use the Elasticsearch client to index the data
+            es.index(index=index_name, body=data_to_store)
+
+            logger.info(f"Data stored in Elasticsearch successfully for {api_name}")
+            logger.info(
+                f"Data fetched, translated, and stored successfully for {api_name}"
+            )
+            return {
+                "message": f"Data fetched, translated, and stored successfully for {api_name}",
+                "data": data_to_store,
+            }
+        except HTTPException as e:
+            logger.error(f"HTTPException: {e.status_code} - {e.detail}")
+            raise e
         except Exception as e:
-            logger.error(f"Error creating Elasticsearch index: {str(e)}")
-
-        # Storing the data in Elasticsearch
-        index_name = os.getenv("ELASTICSEARCH_INDEX_NAME", "exchangeratesapi")
-
-        # Log the data to be stored
-        logger.info(f"Storing data in Elasticsearch: {data_to_store}")
-
-        # Use the Elasticsearch client to index the data
-        es.index(index=index_name, body=data_to_store)
-
-        logger.info("Data stored in Elasticsearch successfully")
-        logger.info("Data fetched, translated, and stored successfully")
-        return {
-            "message": "Data fetched, translated, and stored successfully",
-            "data": data_to_store,
-        }
-    except HTTPException as e:
-        logger.error(f"HTTPException: {e.status_code} - {e.detail}")
-        raise e
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+            logger.error(f"Error: {str(e)}")
+            raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-@router.get("/exchangeratesdata")
-async def get_exchange_rates_data():
-    try:
-        # Fetch data from Elasticsearch with a dynamic index name
-        data = fetch_data_from_elasticsearch(
-            index_name=os.getenv(
-                "ELASTICSEARCH_EXCHANGERATES_INDEX_NAME", "exchangeratesapi"
-            )
-        )
+def create_get_data_handler(api_name, api_config):
+    """
+    Create a handler to get data from Elasticsearch for the given API.
+    """
 
-        return {"message": "Data fetched successfully", "data": data}
-    except Exception as e:
-        return {"message": f"Error: {str(e)}"}
-
-
-@router.get("/weatherapi")
-async def fetch_translate_store_weather_data():
-    try:
-        # Load the API configuration from environment variables
-        api_url = os.getenv("WEATHER_API_URL")
-        api_key = os.getenv("WEATHER_API_KEY")
-        location = os.getenv("WEATHER_API_LOCATION")
-
-        if not api_url or not api_key or not location:
-            raise HTTPException(
-                status_code=500, detail="Weather API configuration not provided"
-            )
-
-        # Fetch data from the Weather API
-        params = {"key": api_key, "q": location}
-        data = await fetch_data_from_api(api_url, params)
-
-        # Parsing the received JSON data (you can customize this part based on the actual response structure)
-        location_name = data["location"]["name"]
-        temperature_c = data["current"]["temp_c"]
-        weather_condition = data["current"]["condition"]["text"]
-
-        # Create the index if it does not exist
+    @router.get(f"/{api_name}data")
+    async def get_api_data(api_name: str):
         try:
-            create_index_if_not_exists()
+            # Fetch data from Elasticsearch with a dynamic index name
+            data = fetch_data_from_elasticsearch(
+                index_name=os.getenv(api_config["ELASTICSEARCH_INDEX_ENV"], api_name)
+            )
+            return {"message": f"{api_name} data fetched successfully", "data": data}
         except Exception as e:
-            logger.error(f"Error creating Elasticsearch index: {str(e)}")
-
-        # Storing the data in Elasticsearch
-        index_name = os.getenv("ELASTICSEARCH_WEATHER_INDEX_NAME", "weatherapi")
-
-        # Log the data to be stored
-        logger.info(f"Storing weather data in Elasticsearch: {data}")
-
-        # Use the Elasticsearch client to index the data
-        es.index(index=index_name, body=data)
-
-        logger.info("Weather data stored in Elasticsearch successfully")
-        logger.info("Weather data fetched, translated, and stored successfully")
-        return {
-            "message": "Weather data fetched, translated, and stored successfully",
-            "data": {
-                "location_name": location_name,
-                "temperature_c": temperature_c,
-                "weather_condition": weather_condition,
-            },
-        }
-    except HTTPException as e:
-        raise e  # No need to modify the exception here
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+            return {"message": f"Error: {str(e)}"}
 
 
-@router.get("/weatherapidata")
-async def get_weather_data():
-    try:
-        # Fetch data from Elasticsearch with a dynamic index name
-        data = fetch_data_from_elasticsearch(
-            index_name=os.getenv("ELASTICSEARCH_WEATHER_API_INDEX_NAME", "weatherapi")
-        )
+# Configuration for Exchangerates API
+exchangerates_config = {
+    "API_URL_ENV": "EXCHANGERATES_API_URL",
+    "API_KEY_ENV": "EXCHANGERATES_API_KEY",
+    "ELASTICSEARCH_INDEX_ENV": "ELASTICSEARCH_EXCHANGERATES_INDEX_NAME",
+    "parse_function": lambda data: {
+        "success": data.get("success", False),
+        "timestamp": data.get("timestamp"),
+        "base_currency": data.get("base"),
+        "date": data.get("date"),
+        "exchange_rates": data.get("rates", {}),
+    },
+}
 
-        return {"message": "Weather data fetched successfully", "data": data}
-    except Exception as e:
-        return {"message": f"Error: {str(e)}"}
+# Configuration for Weather API
+weather_config = {
+    "API_URL_ENV": "WEATHER_API_URL",
+    "API_KEY_ENV": "WEATHER_API_KEY",
+    "ELASTICSEARCH_INDEX_ENV": "ELASTICSEARCH_WEATHER_INDEX_NAME",
+    "parse_function": lambda data: {
+        "location_name": data["location"]["name"],
+        "temperature_c": data["current"]["temp_c"],
+        "weather_condition": data["current"]["condition"]["text"],
+    },
+}
+
+
+# Create handlers for each API
+create_api_handler("exchangeratesapi", exchangerates_config)
+create_get_data_handler("exchangeratesapi", exchangerates_config)
+
+create_api_handler("weatherapi", weather_config)
+create_get_data_handler("weatherapi", weather_config)
