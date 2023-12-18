@@ -3,7 +3,7 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from handlers.api_handler import router as api_router  # Change the import here
+from src.api.handlers.api_handler import router as api_router
 
 
 def configure_app() -> FastAPI:

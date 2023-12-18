@@ -1,11 +1,16 @@
-# backend/main.py
-from config.app_config import configure_app
-from config.elasticsearch_config import check_elasticsearch
-from config.log_config import configure_logging
+# backend/src/api/main.py
 from fastapi_utils.tasks import repeat_every
-from handlers.api_handler import fetch_translate_store_exchangerate_data
 from loguru import logger
 from prometheus_fastapi_instrumentator import Instrumentator, metrics
+from src.api.config.app_config import configure_app
+from src.api.config.elasticsearch_config import check_elasticsearch
+from src.api.config.log_config import configure_logging
+from src.api.handlers.api_handler import (
+    create_api_handler,
+    create_get_data_handler,
+    exchangerates_config,
+    weather_config,
+)
 
 # Call the configure_logging function
 configure_logging()
@@ -15,18 +20,34 @@ app = configure_app()
 # Metrics
 Instrumentator().instrument(app).expose(app)
 
+# Create routers
+exchangeratesapi_router = create_api_handler("exchangeratesapi", exchangerates_config)
+exchangeratesapi_data_router = create_get_data_handler(
+    "exchangeratesapi", exchangerates_config
+)
+
+weatherapi_router = create_api_handler("weatherapi", weather_config)
+weatherapi_data_router = create_get_data_handler("weatherapi", weather_config)
+
+# Include routers in your FastAPI app
+app.include_router(exchangeratesapi_router)
+app.include_router(exchangeratesapi_data_router)
+
+app.include_router(weatherapi_router)
+app.include_router(weatherapi_data_router)
 
 # Define a list of scheduled tasks
 scheduled_tasks = [
     {
         "handler": "handlers.api_handler",
-        "function": "fetch_translate_store_exchangerate_data",
+        "function": "create_api_handler.fetch_translate_store_data",
         "api_name": "exchangeratesapi",
         "interval_seconds": 60 * 60 * 24,
     },
     {
         "handler": "handlers.api_handler",
-        "function": "fetch_translate_store_weather_data",
+        "function": "create_api_handler.fetch_translate_store_data",
+        "api_name": "weatherapi",
         "interval_seconds": 60 * 30,  # Run every 30 minutes
     },
 ]
@@ -40,21 +61,10 @@ def scheduled_task(api_name, scheduled_function):
 
 
 # Event handler for application startup
+# Event handler for application startup
 def startup_event():
     logger.info("Application is starting")
     check_elasticsearch()
-
-    # Schedule tasks
-    for task in scheduled_tasks:
-        handler_module = __import__(task["handler"], fromlist=[task["function"]])
-        scheduled_function = getattr(handler_module.router, task["function"])
-
-        @repeat_every(seconds=task["interval_seconds"], logger=None)
-        def scheduled_task():
-            try:
-                scheduled_function(task["api_name"])
-            except Exception as e:
-                logger.error(f"Error in scheduled task: {str(e)}")
 
     logger.info("Application has started")
 
@@ -67,7 +77,6 @@ def shutdown_event():
 # Register startup and shutdown event handlers
 app.add_event_handler("startup", startup_event)
 app.add_event_handler("shutdown", shutdown_event)
-
 
 # If the script is run directly (not imported)
 if __name__ == "__main__":
