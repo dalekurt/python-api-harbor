@@ -8,3 +8,4 @@ logs/
 __pycache__/
 .vscode/
 *.db
+grafana/grafana.db
