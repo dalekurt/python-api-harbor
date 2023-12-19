@@ -14,8 +14,12 @@ async def fetch_data_from_api(api_url, params):
         async with httpx.AsyncClient() as client:
             response = await client.get(api_url, params=params)
 
-            if response.status_code == 403:
-                raise httpx.HTTPStatusError(403, "Unauthorized access to API")
+            if response.status_code == 401:
+                raise httpx.HTTPStatusError(
+                    response=response,
+                    request=response.request,
+                    message="Unauthorized access to API",
+                )
 
             response.raise_for_status()
 
@@ -23,9 +27,7 @@ async def fetch_data_from_api(api_url, params):
 
         return data
     except httpx.HTTPStatusError as e:
-        raise httpx.HTTPStatusError(
-            f"API Error: {e}", request=e.request, response=e.response
-        )
+        raise  # Re-raise the exception to be caught in the calling function
     except Exception as e:
         logger.error(f"Error fetching data from API: {str(e)}")
         raise

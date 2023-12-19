@@ -22,8 +22,8 @@ def create_api_handler(api_name, api_config):
     Create an API handler for the given API.
     """
 
-    @router.get(f"/{api_name}")
-    async def fetch_translate_store_data(api_name: str):
+    @router.get(f"/api/{api_name}")
+    async def fetch_translate_store_data():
         try:
             # Load the API configuration from environment variables
             api_url = os.getenv(api_config["API_URL_ENV"])
@@ -82,7 +82,7 @@ def create_get_data_handler(api_name, api_config):
     Create a handler to get data from Elasticsearch for the given API.
     """
 
-    @router.get(f"/{api_name}data")
+    @router.get(f"/data/{api_name}")
     async def get_api_data(api_name: str):
         try:
             # Fetch data from Elasticsearch with a dynamic index name
@@ -101,7 +101,7 @@ exchangerates_config = {
     "API_URL_ENV": "EXCHANGERATES_API_URL",
     "API_KEY_ENV": "EXCHANGERATES_API_KEY",
     "ELASTICSEARCH_INDEX_ENV": "ELASTICSEARCH_EXCHANGERATES_INDEX_NAME",
-    "QUERY_PARAMS": {"base": "USD"},
+    "QUERY_PARAMS": {"access_key": os.getenv("EXCHANGERATES_API_KEY")},
     "parse_function": lambda data: {
         "success": data.get("success", False),
         "timestamp": data.get("timestamp"),
@@ -123,11 +123,3 @@ weather_config = {
         "weather_condition": data["current"]["condition"]["text"],
     },
 }
-
-
-# Create handlers for each API
-create_api_handler("exchangeratesapi", exchangerates_config)
-create_get_data_handler("exchangeratesapi", exchangerates_config)
-
-create_api_handler("weatherapi", weather_config)
-create_get_data_handler("weatherapi", weather_config)

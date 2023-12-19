@@ -20,32 +20,29 @@ app = configure_app()
 # Metrics
 Instrumentator().instrument(app).expose(app)
 
-# Create routers
-exchangeratesapi_router = create_api_handler("exchangeratesapi", exchangerates_config)
-exchangeratesapi_data_router = create_get_data_handler(
-    "exchangeratesapi", exchangerates_config
-)
 
-weatherapi_router = create_api_handler("weatherapi", weather_config)
-weatherapi_data_router = create_get_data_handler("weatherapi", weather_config)
+# Routers list
+routers = [
+    create_api_handler("exchangeratesapi", exchangerates_config),
+    create_get_data_handler("exchangeratesapi", exchangerates_config),
+    create_api_handler("weatherapi", weather_config),
+    create_get_data_handler("weatherapi", weather_config),
+]
 
-# Include routers in your FastAPI app
-app.include_router(exchangeratesapi_router)
-app.include_router(exchangeratesapi_data_router)
-
-app.include_router(weatherapi_router)
-app.include_router(weatherapi_data_router)
+# Loop through the routes
+for router in routers:
+    app.include_router(router)
 
 # Define a list of scheduled tasks
 scheduled_tasks = [
     {
-        "handler": "handlers.api_handler",
+        "handler": "create_api_handler",
         "function": "create_api_handler.fetch_translate_store_data",
         "api_name": "exchangeratesapi",
         "interval_seconds": 60 * 60 * 24,
     },
     {
-        "handler": "handlers.api_handler",
+        "handler": "create_api_handler",
         "function": "create_api_handler.fetch_translate_store_data",
         "api_name": "weatherapi",
         "interval_seconds": 60 * 30,  # Run every 30 minutes
