@@ -1,0 +1,11 @@
+# .gitignore
+
+# Ignore logs
+logs/
+*.log
+# Ignore environment files
+.env
+__pycache__/
+.vscode/
+*.db
+grafana/grafana.db
