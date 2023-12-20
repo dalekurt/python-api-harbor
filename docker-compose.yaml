@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.9"
 
 services:
   backend:
@@ -12,6 +12,71 @@ services:
       - mongodb
       - kibana
       - filebeat
+
+  db:
+    image: postgres:15.2-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=prefect
+    ports:
+      - 5432:5432
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  prefect-server:
+    image: prefecthq/prefect:2.14.11-python3.11
+    restart: always
+    volumes:
+      - prefect_data:/root/.prefect
+    entrypoint: ["/opt/prefect/entrypoint.sh", "prefect", "server", "start"]
+    environment:
+      - PREFECT_UI_URL=http://127.0.0.1:4200/api
+      - PREFECT_API_URL=http://127.0.0.1:4200/api
+      # If you want to access Prefect Server UI from anywhere other than the Docker host machine, you will need to change
+      # PREFECT_UI_URL and PREFECT_API_URL to match the external hostname/IP of the host machine. For example:
+      #- PREFECT_UI_URL=http://external-ip:4200/api
+      #- PREFECT_API_URL=http://external-ip:4200/api
+      - PREFECT_SERVER_API_HOST=0.0.0.0
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://postgres:postgres@db:5432/prefect
+      # Uncomment the following line if you want to use the 'S3 Bucket' storage block instead of the older 'S3' storage
+      # - EXTRA_PIP_PACKAGES=prefect-aws
+    ports:
+      - 4200:4200
+    depends_on:
+      - db
+
+  ## Prefect Agent
+  prefect-agent:
+    image: prefecthq/prefect:2.14.11-python3.11
+    restart: always
+    entrypoint:
+      [
+        "/opt/prefect/entrypoint.sh",
+        "prefect",
+        "agent",
+        "start",
+        "-q",
+        "YOUR_WORK_QUEUE_NAME",
+      ]
+    environment:
+      - PREFECT_API_URL=http://server:4200/api
+    #       Use PREFECT_API_KEY if connecting the agent to Prefect Cloud
+    #     - PREFECT_API_KEY=YOUR_API_KEY
+
+  ### Prefect CLI
+  #   prefect-cli:
+  #     image: prefecthq/prefect:2.14.11-python3.11
+  #     entrypoint: "bash"
+  #     working_dir: "/root/flows"
+  #     volumes:
+  #       - "./flows:/root/flows"
+  #     environment:
+  #       - PREFECT_API_URL=http://server:4200/api
+  # #       Use PREFECT_API_KEY to use the CLI to interact with Prefect Cloud
+  # #     - PREFECT_API_KEY=YOUR_API_KEY
+  #     profiles: ["cli"]
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
@@ -36,7 +101,7 @@ services:
   filebeat:
     image: docker.elastic.co/beats/filebeat:${STACK_VERSION}
     volumes:
-      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./filebeat:/usr/share/filebeat
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
     depends_on:
       - elasticsearch
@@ -79,6 +144,7 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - ./grafana:/var/lib/grafana
+
 volumes:
   elasticsearch-data:
     driver: local
@@ -99,3 +165,5 @@ volumes:
       type: none
       device: ./grafana_data
   postgres_data:
+  prefect_data:
+  db_data:
