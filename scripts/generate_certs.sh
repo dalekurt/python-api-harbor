@@ -23,7 +23,7 @@ openssl x509 -req -in certs/os-dashboards/os-dashboards.csr -CA certs/ca/ca.pem 
 rm certs/os-dashboards/os-dashboards-temp.key certs/os-dashboards/os-dashboards.csr
 
 # Nodes
-for NODE_NAME in "opensearch"
+for NODE_NAME in "os01" "os02" "os03"
 do
     mkdir "certs/${NODE_NAME}"
     openssl genrsa -out "certs/$NODE_NAME/$NODE_NAME-temp.key" 2048

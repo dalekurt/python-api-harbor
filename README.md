@@ -2,6 +2,12 @@
 
 This project provides a system to fetch, translate, and store data from an external API into Elasticsearch. It includes a backend implemented using FastAPI, Elasticsearch for data storage, and a potential frontend using ChartJS for visualizing the stored data.
 
+# Setup
+
+```sh
+docker-compose exec opensearch bash -c "chmod +x plugins/opensearch-security/tools/securityadmin.sh && bash plugins/opensearch-security/tools/securityadmin.sh -cd config/opensearch-security -icl -nhnv -cacert config/certificates/ca/ca.pem -cert config/certificates/ca/admin.pem -key config/certificates/ca/admin.key -h localhost"
+```
+
 # API Usage
 
 Welcome to the API documentation for [Your Project Name]! This API provides information from Exchangerates and Weather APIs.
