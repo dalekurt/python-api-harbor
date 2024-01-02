@@ -1,31 +1,5 @@
 version: "3.8"
 
-x-opensearch-common: &opensearch-common
-  image: opensearchproject/opensearch:${OPENSEARCH_VERSION}
-  environment:
-    - cluster.name=os-cluster
-    - discovery.seed_hosts=os01,os02,os03
-    - cluster.initial_cluster_manager_nodes=os01,os02,os03
-    - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
-    - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-    # - discovery.seed_hosts=os01,os02,os03
-    # - cluster.initial_master_nodes=os01,os02,os03
-    # - network.host="0.0.0.0"
-  ulimits:
-    memlock:
-      soft: -1
-      hard: -1
-    nofile:
-      soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
-      hard: 65536
-  logging:
-    driver: "json-file"
-    options:
-      max-size: "100m"
-      max-file: "1"
-  networks:
-    - api-harbor-network
-
 services:
   server:
     container_name: server
@@ -37,12 +11,10 @@ services:
     networks:
       - api-harbor-network
     depends_on:
-      - os01
-      - os02
-      - os03
+      - elasticsearch
       - mongodb
       - kibana
-      # - filebeat
+      - dragonfly
       - temporal
 
   worker:
@@ -55,9 +27,7 @@ services:
     networks:
       - api-harbor-network
     depends_on:
-      - os01
-      - os02
-      - os03
+      - elasticsearch
       - mongodb
       - kibana
       # - filebeat
@@ -73,13 +43,31 @@ services:
       - discovery.type=single-node
       - ES_JAVA_OPTS=-Xms256m -Xmx256m
       - xpack.security.enabled=false
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
     image: elasticsearch:${ELASTICSEARCH_VERSION}
     networks:
       - api-harbor-network
     expose:
       - 9200
+    ports:
+      - "9200:9200"
+      - "9300:9300"
     volumes:
       - /var/lib/elasticsearch/data
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:${ELASTICSEARCH_VERSION}
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:${ES_PORT}
+      - ELASTICSEARCH_USERNAME=${ELASTIC_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
+    ports:
+      - "${KIBANA_PORT}:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - api-harbor-network
 
   postgresql:
     container_name: postgresql
@@ -97,9 +85,8 @@ services:
   temporal:
     container_name: temporal
     depends_on:
-      depends_on:
-        - postgresql
-        - elasticsearch
+      - postgresql
+      - elasticsearch
     environment:
       - DB=postgresql
       - DB_PORT=5432
@@ -108,7 +95,7 @@ services:
       - POSTGRES_SEEDS=postgresql
       - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
       - ENABLE_ES=true
-      - ES_SEEDS=opensearch
+      - ES_SEEDS=elasticsearch
       - ES_VERSION=v7
     image: temporalio/auto-setup:${TEMPORAL_VERSION}
     networks:
@@ -159,10 +146,12 @@ services:
     container_name: mongodb
     image: mongo:latest
     ports:
-      - "${MONGO_PORT}:27017"
+      - "${MONGODB_PORT}:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+    networks:
+      - api-harbor-network
 
   mongo-express:
     container_name: mongo-express
@@ -171,9 +160,11 @@ services:
       - "8081:8081"
     environment:
       ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_MONGODB_PORT: ${MONGO_PORT}
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_PORT: ${MONGODB_PORT}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_PASSWORD}
+    networks:
+      - api-harbor-network
 
   prometheus:
     container_name: prometheus
@@ -184,6 +175,8 @@ services:
       - ./prometheus:/etc/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
+    networks:
+      - api-harbor-network
 
   grafana:
     container_name: grafana
@@ -196,8 +189,11 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - ./grafana:/var/lib/grafana
+    networks:
+      - api-harbor-network
 
   dragonfly:
+    container_name: dragonfly
     image: "docker.dragonflydb.io/dragonflydb/dragonfly"
     ulimits:
       memlock: -1
@@ -209,6 +205,8 @@ services:
     # network_mode: "host"
     volumes:
       - dragonfly_data:/data
+    networks:
+      - api-harbor-network
 
 volumes:
   elasticsearch-data:
@@ -232,9 +230,6 @@ volumes:
   filebeat_data:
   mongo_data:
   temporal_data:
-  opensearch_data1:
-  opensearch_data2:
-  opensearch_data3:
   dragonfly_data:
 
 networks:
