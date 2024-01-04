@@ -1,22 +1,18 @@
 # server/main.py
-from app.config.lifespan_config import shutdown_event_handler, startup_event_handler
-from app.databases.dragonflydb import get_redis
-from app.databases.temporal_client import create_temporal_client
-from app.routes import api_routes
-from app.routes.api_routes import router as api_router
+from app.config.app_config import configure_app
+from app.handlers import exchangerates_handler, weather_handler
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException
-from loguru import logger
 
-# Load my .env file
+# NOTE: Moved all the app configuration to app/config/app_config.py
+
+# Load the .env file
 load_dotenv()
 
-app = FastAPI()
+app = configure_app()
 
-app.add_event_handler("startup", startup_event_handler)
-app.add_event_handler("shutdown", shutdown_event_handler)
-
-app.include_router(api_routes.router, prefix="/api")
+# Include the new handler routers
+app.include_router(exchangerates_handler.router)
+app.include_router(weather_handler.router)
 
 if __name__ == "__main__":
     import uvicorn
