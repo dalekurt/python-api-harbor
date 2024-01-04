@@ -1,18 +1,16 @@
 # server/main.py
 from app.config.app_config import configure_app
-from app.handlers import exchangerates_handler, weather_handler
+from app.routes import exchangerates_routes, weather_routes
 from dotenv import load_dotenv
-
-# NOTE: Moved all the app configuration to app/config/app_config.py
 
 # Load the .env file
 load_dotenv()
 
 app = configure_app()
 
-# Include the new handler routers
-app.include_router(exchangerates_handler.router)
-app.include_router(weather_handler.router)
+# Routers
+app.include_router(exchangerates_routes.router, prefix="")
+app.include_router(weather_routes.router, prefix="")
 
 if __name__ == "__main__":
     import uvicorn
