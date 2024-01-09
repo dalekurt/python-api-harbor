@@ -35,11 +35,11 @@ API Harbor is a modular and scalable system designed for fetching, translating, 
 4. **Logging:**
    - Logging is done using `loguru` with different log levels to facilitate debugging and monitoring.
 
-### Recommendations
+### TO DO:
 
-- Consider enhancing modularity by using dependency injection, especially for components like the Elasticsearch client.
-- Continuously document code to improve readability for maintainers and collaborators.
-- Regularly update and review dependencies to ensure compatibility and security.
+* [ ] Consider enhancing modularity by using dependency injection, especially for components like the Elasticsearch client.
+* [ ]  Continuously document code to improve readability for maintainers and collaborators.
+* [ ]  Regularly update and review dependencies to ensure compatibility and security.
 
 ### Future Improvements
 
@@ -49,56 +49,13 @@ API Harbor is a modular and scalable system designed for fetching, translating, 
 # Setup
 
 ```sh
-docker-compose exec opensearch bash -c "chmod +x plugins/opensearch-security/tools/securityadmin.sh && bash plugins/opensearch-security/tools/securityadmin.sh -cd config/opensearch-security -icl -nhnv -cacert config/certificates/ca/ca.pem -cert config/certificates/ca/admin.pem -key config/certificates/ca/admin.key -h localhost"
+docker-compose up -d
 ```
 
-# API Usage
-
-Welcome to the API documentation for [Your Project Name]! This API provides information from Exchangerates and Weather APIs.
-
-## Base URL
-
-The base URL for the API is: `http://localhost:8000/api`
-
-## Endpoints
-
-### Exchangerates API
-
-#### Fetch, Translate, and Store Data
-
-- **Endpoint:**
-  - Method: GET
-  - Path: `/exchangerates`
-
-This endpoint fetches data from the Exchangerates API, translates it, and stores it in Elasticsearch.
-
-#### Get Data from Elasticsearch
-
-- **Endpoint:**
-  - Method: GET
-  - Path: `/data/exchangerates`
-
-This endpoint retrieves data from Elasticsearch that was previously fetched from the Exchangerates API.
-
-### Weather API
-
-#### Fetch, Translate, and Store Data
-
-- **Endpoint:**
-  - Method: GET
-  - Path: `/weather`
-
-This endpoint fetches data from the Weather API, translates it, and stores it in Elasticsearch.
-
-#### Get Data from Elasticsearch
-
-- **Endpoint:**
-  - Method: GET
-  - Path: `/data/weather`
-
-This endpoint retrieves data from Elasticsearch that was previously fetched from the Weather API.
 
 ## How to Use
+
+### Server
 
 1. **Fetch Exchangerates Data:**
 
