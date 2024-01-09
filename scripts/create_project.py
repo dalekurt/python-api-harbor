@@ -1,4 +1,9 @@
+# scripts/create_project.py
+# Generate my project file and directories
+# because I'm lazy :) plus I needed a reason
+# to use python.
 import os
+
 
 def generate_project_structure():
     # Generate server directory structure
@@ -9,6 +14,7 @@ def generate_project_structure():
 
     # Generate frontend directory structure
     generate_frontend_structure()
+
 
 def generate_server_structure():
     server_structure = [
@@ -26,6 +32,7 @@ def generate_server_structure():
 
     generate_structure("server", server_structure)
 
+
 def generate_worker_structure():
     worker_structure = [
         ("worker/tasks", "__init__.py"),
@@ -37,6 +44,7 @@ def generate_worker_structure():
     ]
 
     generate_structure("worker", worker_structure)
+
 
 def generate_frontend_structure():
     frontend_structure = [
@@ -52,12 +60,14 @@ def generate_frontend_structure():
 
     generate_structure("frontend", frontend_structure)
 
+
 def generate_structure(base_path, structure):
     for folder, file in structure:
         path = os.path.join(base_path, folder)
         os.makedirs(path, exist_ok=True)
-        open(os.path.join(path, file), 'w').close()
+        open(os.path.join(path, file), "w").close()
         print(f"Generated file: {os.path.join(folder, file)}")
+
 
 if __name__ == "__main__":
     generate_project_structure()

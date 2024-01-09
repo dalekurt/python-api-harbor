@@ -1,11 +1,12 @@
 # server/app/routes/api_routes.py
 import redis
-from app.databases.dragonflydb import get_redis
-from app.databases.elasticsearch import get_elasticsearch_client
-from app.databases.mongodb import get_mongo_client
-from app.databases.temporal_client import create_temporal_client
 from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
+
+from shared.clients.dragonflydb import get_redis
+from shared.clients.elasticsearch import get_elasticsearch_client
+from shared.clients.mongodb import get_mongo_client
+from shared.clients.temporal_client import create_temporal_client
 
 router = APIRouter()
 

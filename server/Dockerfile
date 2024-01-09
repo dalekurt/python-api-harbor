@@ -9,6 +9,9 @@ WORKDIR /app
 # Copy the server directory contents into the container at /app
 COPY . /app
 
+# Copy the shared directory contents into the container at /app
+COPY ../shared /app/shared
+
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
@@ -18,5 +21,5 @@ EXPOSE 8000
 # Define environment variable
 ENV NAME server
 
-# Run app.py when the container launches
-CMD ["python", "/app/run.py"]
+# Run the FastAPI app using Uvicorn when the container launches
+CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]

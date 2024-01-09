@@ -1,4 +1,4 @@
-# server/app/workflows/weather_workflow.py
+# shared/app/workflows/weather_workflow.py
 from datetime import timedelta
 
 from temporalio import workflow

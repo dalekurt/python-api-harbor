@@ -3,10 +3,12 @@ import os
 import random
 import string
 
-from app.databases.temporal_client import create_temporal_client
+# from app.databases.temporal_client import create_temporal_client
 from app.handlers.weather_handler import fetch_translate_store_data, get_weather_data
 from app.workflows.weather_workflow import WeatherWorkflow
 from fastapi import APIRouter
+
+from shared.clients.temporal_client import create_temporal_client
 
 router = APIRouter()
 

@@ -2,12 +2,13 @@
 import asyncio
 import os
 
-from app.config.logger_config import logger
 from app.crons.schedule_exchangerates_workflow import schedule_exchangerates_workflow
 from app.crons.schedule_weather_workflow import schedule_weather_workflow
 from app.routes import exchangerates_routes, weather_routes
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from shared.config.logger_config import logger
 
 
 async def start_scheduled_workflows():
@@ -37,7 +38,7 @@ def configure_app() -> FastAPI:
         "WEATHER_API_LOCATION",
     ]
 
-    # Check for the presence of essential environment variables
+    # Check for the the essential environment variables
     missing_variables = [var for var in essential_variables if os.getenv(var) is None]
     if missing_variables:
         raise EnvironmentError(
@@ -58,7 +59,7 @@ def configure_app() -> FastAPI:
     app.add_event_handler("startup", startup_event_handler)
     app.add_event_handler("shutdown", shutdown_event_handler)
 
-    # Include routers
+    # Routers
     app.include_router(exchangerates_routes.router, prefix="")
     app.include_router(weather_routes.router, prefix="")
 

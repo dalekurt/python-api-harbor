@@ -1,12 +1,13 @@
 # server/app/workflows/exchangerates_workflow.py
 from datetime import timedelta
 
-from app.activities.data_activities import (
+from temporalio import workflow
+
+from shared.activities.data_activities import (
     fetch_data_activity,
     store_data_activity,
     translate_data_activity,
 )
-from temporalio import workflow
 
 
 @workflow.defn

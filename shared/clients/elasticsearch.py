@@ -2,11 +2,12 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from app.config.elasticsearch_config import ElasticsearchConfig
-from app.config.logger_config import logger
 from elasticsearch import AsyncElasticsearch, ConnectionError, TransportError
 from fastapi import FastAPI, HTTPException
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
+
+from shared.config.elasticsearch_config import ElasticsearchConfig
+from shared.config.logger_config import logger
 
 elasticsearch_config = ElasticsearchConfig()
 es = None

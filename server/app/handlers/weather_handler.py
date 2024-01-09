@@ -2,13 +2,14 @@
 import os
 
 import aiohttp
-from app.config.external_api_config import weather_config
-from app.config.logger_config import logger
-from app.databases.elasticsearch import (
+from fastapi import HTTPException
+
+from shared.clients.elasticsearch import (
     create_index_if_not_exists,
     get_elasticsearch_client,
 )
-from fastapi import HTTPException
+from shared.config.external_api_config import weather_config
+from shared.config.logger_config import logger
 
 
 async def fetch_translate_store_data():

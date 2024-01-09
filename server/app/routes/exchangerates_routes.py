@@ -3,13 +3,14 @@ import os
 import random
 import string
 
-from app.databases.temporal_client import create_temporal_client
 from app.handlers.exchangerates_handler import (
     fetch_translate_store_data,
     get_exchangerates_data,
 )
 from app.workflows.exchangerates_workflow import ExchangeRatesWorkflow
 from fastapi import APIRouter
+
+from shared.clients.temporal_client import create_temporal_client
 
 router = APIRouter()
 
